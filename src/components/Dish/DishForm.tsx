@@ -1,60 +1,82 @@
-import React, { useState } from 'react';
-import { useAppDispatch } from '../../app/hooks';
-import { Dish as DishType } from '../../types';
+import {ApiDish, DishMutation, Dish} from '../../types';
+import React, {useState} from 'react';
+import ButtonSpinner from "../ButtonSpinner.tsx";
 
-interface DishFormProps {
-    initialDish?: DishType;
+const initialState: DishMutation = {
+    name: '',
+    image: '',
+    price: '',
+};
+
+interface Props {
+    onSubmit: (dish: ApiDish) => void;
+    existingDish?: DishMutation;
+    isEdit?: boolean;
+    isLoading?: boolean;
 }
 
-const DishForm: React.FC<DishFormProps> = ({ initialDish }) => {
-    const dispatch = useAppDispatch();
-    const [title, setTitle] = useState(initialDish ? initialDish.name : '');
-    const [price, setPrice] = useState(initialDish ? initialDish.price.toString() : '');
-    const [image, setImage] = useState(initialDish ? initialDish.image : '');
+const DishForm: React.FC<Props> = ({onSubmit, existingDish = initialState, isEdit = false, isLoading = false}) => {
+    const [dish, setDish] = useState<DishMutation>(existingDish);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const changeDish = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        setDish((prev) => ({
+            ...prev,
+            [e.target.name]: e.target.value,
+        }));
+    };
+
+    const onFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isLoading) return;
 
-        const dishData = {
-            id: initialDish ? initialDish.id : String(new Date().getTime()),
-            name: title,
-            price: Number(price),
-            image,
-        };
+        const parsedPrice = parseFloat(dish.price);
+        const newDish: Dish = { ...dish, price: isNaN(parsedPrice) ? 0 : parsedPrice };
 
-        if (initialDish) {
-            dispatch(editDish(dishData));
-        } else {
-            dispatch(addDish(dishData));
-        }
-
-        setTitle('');
-        setPrice('');
-        setImage('');
+        await onSubmit(newDish);
     };
 
     return (
-        <div>
-            <h2>{initialDish ? 'Edit Dish' : 'Add New Dish'}</h2>
-            <form onSubmit={handleSubmit}>
-                <label>
-                    Title:
-                    <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
-                </label>
-                <br />
-                <label>
-                    Price:
-                    <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
-                </label>
-                <br />
-                <label>
-                    Image URL:
-                    <input type="text" value={image} onChange={(e) => setImage(e.target.value)} />
-                </label>
-                <br />
-                <button type="submit">{initialDish ? 'Edit Dish' : 'Add Dish'}</button>
-            </form>
-        </div>
+        <form onSubmit={onFormSubmit}>
+            <h4>{isEdit ? 'Edit dish' : 'Add new dish'}</h4>
+            <div className="form-group">
+                <label htmlFor="name">Name</label>
+                <input
+                    type="text"
+                    name="name"
+                    id="name"
+                    className="form-control"
+                    value={dish.name}
+                    onChange={changeDish}
+                />
+            </div>
+            <div className="form-group">
+                <label htmlFor="image">Image</label>
+                <input
+                    type="url"
+                    name="image"
+                    id="image"
+                    className="form-control"
+                    value={dish.image}
+                    onChange={changeDish}
+                />
+            </div>
+            <div className="form-group">
+                <label htmlFor="price">Price</label>
+                <input
+                    type="number"
+                    name="price"
+                    id="price"
+                    className="form-control"
+                    value={dish.price}
+                    onChange={changeDish}
+                />
+            </div>
+
+            <button type="submit" className="btn btn-primary mt-2" disabled={isLoading}>
+                {isLoading && <ButtonSpinner/>}
+                {isEdit ? 'Update' : 'Create'}
+            </button>
+        </form>
     );
 };
 

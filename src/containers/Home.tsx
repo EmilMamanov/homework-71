@@ -1,7 +1,11 @@
-const Home = () => {
+import React from 'react';
+import ClientDishesList from '../components/Dish/ClientDishesList.tsx';
+
+const Home: React.FC = () => {
     return (
         <div>
-            home
+            <h1>Welcome to our restaurant!</h1>
+            <ClientDishesList />
         </div>
     );
 };
